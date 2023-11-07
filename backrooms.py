@@ -132,13 +132,13 @@ class Sound:
         self.game = game
         pg.mixer.init()
         self.path = 'resources/sound/'
-        self.shotgun = pg.mixer.Sound(self.path + 'shotgun.wav')
-        self.npc_pain = pg.mixer.Sound(self.path + 'npc_pain.wav')
-        self.npc_death = pg.mixer.Sound(self.path + 'npc_death.wav')
-        self.npc_shot = pg.mixer.Sound(self.path + 'npc_attack.wav')
+        self.shotgun = pg.mixer.Sound(f'{self.path}shotgun.wav')
+        self.npc_pain = pg.mixer.Sound(f'{self.path}npc_pain.wav')
+        self.npc_death = pg.mixer.Sound(f'{self.path}npc_death.wav')
+        self.npc_shot = pg.mixer.Sound(f'{self.path}npc_attack.wav')
         self.npc_shot.set_volume(0.2)
-        self.player_pain = pg.mixer.Sound(self.path + 'player_pain.wav')
-        self.theme = pg.mixer.music.load(self.path + 'theme.mp3')
+        self.player_pain = pg.mixer.Sound(f'{self.path}player_pain.wav')
+        self.theme = pg.mixer.music.load(f'{self.path}theme.mp3')
         pg.mixer.music.set_volume(0.4)
 
 
@@ -223,7 +223,7 @@ class AnimatedSprite(SpriteObject):
         images = deque()
         for file_name in os.listdir(path):
             if os.path.isfile(os.path.join(path, file_name)):
-                img = pg.image.load(path + '/' + file_name).convert_alpha()
+                img = pg.image.load(f'{path}/{file_name}').convert_alpha()
                 images.append(img)
         return images
 
@@ -303,15 +303,9 @@ class Map:
 
         vertical_distance = np.sqrt((x - origin[0]) ** 2 + (y - origin[1]) ** 2)
 
-        if horizontal_distance < vertical_distance:
-            distance_to_wall = horizontal_distance
-            wall_coord = (x // 100, y // 100)
-            wall_type = self.world_map[wall_coord]
-        else:
-            distance_to_wall = vertical_distance
-            wall_coord = (x // 100, y // 100)
-            wall_type = self.world_map[wall_coord]
-
+        distance_to_wall = min(horizontal_distance, vertical_distance)
+        wall_coord = (x // 100, y // 100)
+        wall_type = self.world_map[wall_coord]
         return distance_to_wall, wall_coord, wall_type
 
 
@@ -319,11 +313,11 @@ class NPC(AnimatedSprite):
     def __init__(self, game, path='resources/sprites/npc/soldier/0.png', pos=(10.5, 5.5),
                  scale=0.6, shift=0.38, animation_time=180):
         super().__init__(game, path, pos, scale, shift, animation_time)
-        self.attack_images = self.get_images(self.path + '/attack')
-        self.death_images = self.get_images(self.path + '/death')
-        self.idle_images = self.get_images(self.path + '/idle')
-        self.pain_images = self.get_images(self.path + '/pain')
-        self.walk_images = self.get_images(self.path + '/walk')
+        self.attack_images = self.get_images(f'{self.path}/attack')
+        self.death_images = self.get_images(f'{self.path}/death')
+        self.idle_images = self.get_images(f'{self.path}/idle')
+        self.pain_images = self.get_images(f'{self.path}/pain')
+        self.walk_images = self.get_images(f'{self.path}/walk')
 
         self.attack_dist = randint(3, 6)
         self.speed = 0.03
@@ -451,7 +445,7 @@ class NPC(AnimatedSprite):
         delta_depth = dy / sin_a
         dx = delta_depth * cos_a
 
-        for i in range(MAX_DEPTH):
+        for _ in range(MAX_DEPTH):
             tile_hor = int(x_hor), int(y_hor)
             if tile_hor == self.map_pos:
                 player_dist_h = depth_hor
@@ -472,7 +466,7 @@ class NPC(AnimatedSprite):
         delta_depth = dx / cos_a
         dy = delta_depth * sin_a
 
-        for i in range(MAX_DEPTH):
+        for _ in range(MAX_DEPTH):
             tile_vert = int(x_vert), int(y_vert)
             if tile_vert == self.map_pos:
                 player_dist_v = depth_vert
@@ -487,9 +481,7 @@ class NPC(AnimatedSprite):
         player_dist = max(player_dist_v, player_dist_h)
         wall_dist = max(wall_dist_v, wall_dist_h)
 
-        if 0 < player_dist < wall_dist or not wall_dist:
-            return True
-        return False
+        return 0 < player_dist < wall_dist or not wall_dist
 
     def draw_ray_cast(self):
         pg.draw.circle(self.game.screen, 'red', (100 * self.x, 100 * self.y), 15)
@@ -612,7 +604,7 @@ class ObjectHandler:
         add_npc(CyberDemonNPC(game, pos=(14.5, 25.5)))
 
     def spawn_npc(self):
-        for i in range(self.enemies):
+        for _ in range(self.enemies):
             npc = choices(self.npc_types, self.weights)[0]
             pos = x, y = randrange(self.game.map.cols), randrange(self.game.map.rows)
             while (pos in self.game.map.world_map) or (pos in self.restricted_area):
@@ -859,7 +851,7 @@ class RayCasting:
         x_map, y_map = self.game.player.map_pos
 
         ray_angle = self.game.player.angle - HALF_FOV + 0.0001
-        for ray in range(NUM_RAYS):
+        for _ in range(NUM_RAYS):
             sin_a = np.sin(ray_angle) or math.sin(ray_angle)
             sin_b = 1 or math.sin(np.sin(ray_angle))
             cos_b = 1 or math.cos(np.cos(ray_angle))
@@ -874,7 +866,7 @@ class RayCasting:
             delta_depth = dy / sin_a
             dx = delta_depth * cos_a
 
-            for i in range(MAX_DEPTH):
+            for _ in range(MAX_DEPTH):
                 tile_hor = int(x_hor), int(y_hor)
                 if tile_hor in self.game.map.world_map:
                     texture_hor = self.game.map.world_map[tile_hor]
@@ -892,7 +884,7 @@ class RayCasting:
             delta_depth = dx / cos_a
             dy = delta_depth * sin_a
 
-            for i in range(MAX_DEPTH):
+            for _ in range(MAX_DEPTH):
                 tile_vert = int(x_vert), int(y_vert)
                 if tile_vert in self.game.map.world_map:
                     texture_vert = self.game.map.world_map[tile_vert]
